@@ -1,14 +1,20 @@
 import React, { useRef, useState } from 'react';
 import Header from './Header';
 import { validateData } from '../utils/validateData';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from 'react-router-dom';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from '../utils/firebase';
+import { useDispatch } from 'react-redux';
+import { addUser } from '../utils/userSlice';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [IsSignInForm,setIsSignInForm] = useState(true);
   const [errorMessage,setErrorMessage] = useState(null);
   const email = useRef(null);
   const password = useRef(null);
+  const name = useRef(null);
+  const dispatch = useDispatch();
 
   const toggleSignInForm = () => {
     setIsSignInForm(!IsSignInForm);
@@ -29,6 +35,7 @@ const Login = () => {
       .then((userCredential) => {
         const user = userCredential.user;
         console.log(user);
+        navigate("/browse");
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -42,6 +49,18 @@ const Login = () => {
       createUserWithEmailAndPassword(auth, email.current.value, password.current.value)
       .then((userCredential) => {
         const user = userCredential.user;
+
+        updateProfile(user, {
+          displayName: name.current.value , photoURL: "https://example.com/jane-q-user/profile.jpg"
+        }).then(() => {
+          // Profile updated!
+          const { uid, email , displayName } = auth.currentUser;
+        dispatch(addUser({uid: uid, email: email, displayName: displayName}))
+          navigate("browse");
+        }).catch((error) => {
+          // An error occurred
+          setErrorMessage(error.message);
+        });
         console.log(user);
       })
       .catch((error) => {
@@ -63,7 +82,7 @@ const Login = () => {
       </div>
       <form onSubmit={ (e) => e.preventDefault() } className='p-10 bg-black absolute w-3/12 my-44 mx-auto left-0 right-0 text-white bg-opacity-70'>
           <h1 className='p-2 font-bold text-lg'>{IsSignInForm ? "Sign In" : "Sign Up"}</h1>
-          {!IsSignInForm && <input className='my-2 p-2 w-full bg-gray-700 rounded-sm opacity-80' type='text' placeholder='Name'/>}
+          {!IsSignInForm && <input ref={name} className='my-2 p-2 w-full bg-gray-700 rounded-sm opacity-80' type='text' placeholder='Name'/>}
           <input ref={email} className='my-2 p-2 w-full bg-gray-700 rounded-sm opacity-80' type='text' placeholder='Email'/>
           <input ref={password} className='my-2 p-2 w-full bg-gray-700 rounded-sm opacity-80' type='password' placeholder='Password'/>
           { errorMessage && <p className='text-red-500'>{errorMessage}</p>}
