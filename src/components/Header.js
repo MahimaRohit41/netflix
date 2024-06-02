@@ -1,17 +1,21 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { signOut } from "firebase/auth";
 import { auth } from '../utils/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { onAuthStateChanged } from "firebase/auth";
+import { useDispatch } from 'react-redux';
+import { addUser, removeUser } from '../utils/userSlice';
+import { NETFLIX_LOGO } from '../utils/constants';
 
 const Header = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = useSelector((store) => store.user)
 
   const handleSignOut = () => {
     signOut(auth).then(() => {
       // Sign-out successful.
-      navigate("/");
     }).catch((error) => {
       // An error happened.
       navigate("/error");
@@ -19,14 +23,32 @@ const Header = () => {
     
   }
 
+  useEffect(()=>{
+    const unSubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, see docs for a list of available properties
+        const { uid, email , displayName } = user;
+        dispatch(addUser({uid: uid, email: email, displayName: displayName}))
+        navigate("/browse");
+      } else {
+        // User is signed out
+        dispatch(removeUser());
+        navigate("/");
+      }
+    });
+
+    //unsubscribe will be calles when component unmounts
+    return () => unSubscribe()
+  },[]);
+
   return (
     <div className='absolute z-10 w-screen px-8 py-2 bg-gradient-to-b from-black flex justify-between'>
-      <img className='w-44' src="https://cdn.cookielaw.org/logos/dd6b162f-1a32-456a-9cfe-897231c7763c/4345ea78-053c-46d2-b11e-09adaef973dc/Netflix_Logo_PMS.png"
+      <img className='w-44' src={NETFLIX_LOGO}
       alt="logo"
       />
-      {user && (<div className='m-2 p-2'>
+      <div className='m-2 p-2'>
         <button className='text-white' onClick={handleSignOut}>Sign Out</button>
-      </div>)}
+      </div>
     </div>
   )
 }
