@@ -6,12 +6,18 @@ import { useSelector } from 'react-redux';
 import { onAuthStateChanged } from "firebase/auth";
 import { useDispatch } from 'react-redux';
 import { addUser, removeUser } from '../utils/userSlice';
-import { NETFLIX_LOGO } from '../utils/constants';
+import { NETFLIX_LOGO, USER_AVATAR } from '../utils/constants';
+import { toggleGPTSearchView } from '../utils/gptSlice';
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const user = useSelector((store) => store.user)
+  const user = useSelector((store) => store.user);
+  const isGPTSearch = useSelector((state) => state.gpt.showGPTSearch);
+
+  const handleGPTSearchClick = () => {
+    dispatch(toggleGPTSearchView());
+  };
 
   const handleSignOut = () => {
     signOut(auth).then(() => {
@@ -46,8 +52,14 @@ const Header = () => {
       <img className='w-44' src={NETFLIX_LOGO}
       alt="logo"
       />
-      <div className='m-2 p-2'>
-        <button className='text-white' onClick={handleSignOut}>Sign Out</button>
+      <div className='m-2 p-2 flex'>
+        <button className='py-2 px-4 mx-4 text-white bg-gray-700 rounded-md' onClick={handleGPTSearchClick}>GPT Search</button>
+      <img
+            className="hidden md:block w-12 h-12"
+            alt="usericon"
+            src={USER_AVATAR}
+          />
+        <button className='text-white font-bold' onClick={handleSignOut}>Sign Out</button>
       </div>
     </div>
   )
